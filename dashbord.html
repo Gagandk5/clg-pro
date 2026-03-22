@@ -1,1 +1,969 @@
-Work in progress
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>RRCE ERP Portal</title>
+  <link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --navy: #0a1628;
+      --navy-mid: #122040;
+      --blue: #1a5aff;
+      --blue-light: #4d7fff;
+      --teal: #00d4aa;
+      --teal-dim: rgba(0,212,170,0.12);
+      --gold: #f0b429;
+      --surface: #0f1f3d;
+      --surface2: #162847;
+      --text: #e8f0ff;
+      --text-dim: #7a94c1;
+      --border: rgba(255,255,255,0.07);
+      --card-bg: rgba(22, 40, 71, 0.85);
+      --sidebar-w: 240px;
+      --header-h: 64px;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    html, body { height:100%; font-family:'DM Sans',sans-serif; background:var(--navy); color:var(--text); overflow:hidden; }
+
+    /* ── BACKGROUND ── */
+    body::before {
+      content:'';
+      position:fixed; inset:0; z-index:0;
+      background:
+        radial-gradient(ellipse 80% 60% at 70% 10%, rgba(26,90,255,0.13) 0%, transparent 60%),
+        radial-gradient(ellipse 50% 40% at 10% 80%, rgba(0,212,170,0.09) 0%, transparent 55%),
+        var(--navy);
+    }
+
+    /* ── HEADER ── */
+    header {
+      position:fixed; top:0; left:0; right:0; height:var(--header-h); z-index:100;
+      display:flex; align-items:center; justify-content:space-between; padding:0 24px;
+      background:rgba(10,22,40,0.92); backdrop-filter:blur(16px);
+      border-bottom:1px solid var(--border);
+    }
+    .header-left { display:flex; align-items:center; gap:14px; }
+    .header-left img { height:40px; width:40px; border-radius:8px; object-fit:cover; }
+    .college-name { font-family:'Syne',sans-serif; font-weight:700; font-size:15px; line-height:1.2; }
+    .college-name span { display:block; font-size:11px; font-weight:400; color:var(--text-dim); }
+    .header-right { display:flex; align-items:center; gap:16px; }
+    .notif-btn {
+      position:relative; background:var(--surface2); border:1px solid var(--border);
+      border-radius:10px; width:38px; height:38px; display:flex; align-items:center; justify-content:center;
+      cursor:pointer; color:var(--text-dim); transition:all .2s;
+    }
+    .notif-btn:hover { color:var(--text); border-color:var(--blue); }
+    .notif-dot { position:absolute; top:8px; right:8px; width:7px; height:7px; border-radius:50%; background:var(--teal); border:2px solid var(--navy); }
+    .avatar {
+      width:38px; height:38px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--teal));
+      display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif;
+      font-weight:700; font-size:14px; cursor:pointer; border:2px solid transparent;
+      transition:border-color .2s;
+    }
+    .avatar:hover { border-color:var(--teal); }
+
+    /* ── SIDEBAR ── */
+    .sidebar {
+      position:fixed; left:0; top:var(--header-h); bottom:0; width:var(--sidebar-w); z-index:50;
+      background:rgba(10,22,40,0.96); backdrop-filter:blur(20px);
+      border-right:1px solid var(--border); display:flex; flex-direction:column;
+      padding:20px 12px; overflow-y:auto; transition:transform .3s;
+    }
+    .sidebar-section-label {
+      font-size:10px; font-weight:600; letter-spacing:.12em; text-transform:uppercase;
+      color:var(--text-dim); padding:12px 12px 6px; margin-top:8px;
+    }
+    .nav-item {
+      display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px;
+      cursor:pointer; color:var(--text-dim); font-size:13.5px; font-weight:500;
+      transition:all .18s; position:relative; margin-bottom:2px;
+    }
+    .nav-item:hover { background:var(--surface2); color:var(--text); }
+    .nav-item.active {
+      background:linear-gradient(90deg, rgba(26,90,255,0.18), rgba(0,212,170,0.07));
+      color:var(--text); border:1px solid rgba(26,90,255,0.3);
+    }
+    .nav-item.active .nav-icon { color:var(--teal); }
+    .nav-item.active::before {
+      content:''; position:absolute; left:0; top:20%; bottom:20%;
+      width:3px; border-radius:3px; background:var(--teal);
+    }
+    .nav-icon { width:18px; height:18px; flex-shrink:0; }
+    .nav-badge {
+      margin-left:auto; background:var(--blue); color:#fff; border-radius:10px;
+      font-size:10px; font-weight:700; padding:1px 7px;
+    }
+    .sidebar-footer {
+      margin-top:auto; padding-top:16px; border-top:1px solid var(--border);
+    }
+    .logout-btn {
+      display:flex; align-items:center; gap:12px; padding:10px 12px; border-radius:10px;
+      cursor:pointer; color:#ff6b6b; font-size:13.5px; font-weight:500; transition:all .18s;
+    }
+    .logout-btn:hover { background:rgba(255,107,107,0.1); }
+
+    /* ── MAIN ── */
+    main {
+      position:fixed; left:var(--sidebar-w); top:var(--header-h); right:0; bottom:0;
+      overflow-y:auto; padding:28px; z-index:1;
+    }
+
+    /* ── PAGE SYSTEM ── */
+    .page { display:none; animation:fadeUp .3s ease; }
+    .page.active { display:block; }
+    @keyframes fadeUp { from{opacity:0;transform:translateY(12px)} to{opacity:1;transform:translateY(0)} }
+
+    /* ── PAGE HEADER ── */
+    .page-header { margin-bottom:24px; }
+    .page-header h2 { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; color:var(--text); }
+    .page-header p { color:var(--text-dim); font-size:13.5px; margin-top:4px; }
+    .breadcrumb { display:flex; align-items:center; gap:6px; font-size:12px; color:var(--text-dim); margin-bottom:8px; }
+    .breadcrumb span { color:var(--teal); font-weight:500; }
+
+    /* ── CARD ── */
+    .card {
+      background:var(--card-bg); border:1px solid var(--border); border-radius:16px;
+      padding:20px; backdrop-filter:blur(10px); transition:border-color .2s;
+    }
+    .card:hover { border-color:rgba(26,90,255,0.25); }
+    .card-title { font-family:'Syne',sans-serif; font-size:14px; font-weight:700; color:var(--text); margin-bottom:16px; display:flex; align-items:center; gap:8px; }
+    .card-title .ct-icon { color:var(--teal); }
+
+    /* ── GRID HELPERS ── */
+    .grid-3 { display:grid; grid-template-columns:repeat(3,1fr); gap:16px; }
+    .grid-2 { display:grid; grid-template-columns:repeat(2,1fr); gap:16px; }
+    .grid-4 { display:grid; grid-template-columns:repeat(4,1fr); gap:14px; }
+
+    /* ── STAT CARD ── */
+    .stat-card {
+      background:var(--card-bg); border:1px solid var(--border); border-radius:14px;
+      padding:18px; display:flex; flex-direction:column; gap:8px; transition:all .2s;
+    }
+    .stat-card:hover { transform:translateY(-2px); border-color:rgba(26,90,255,0.3); }
+    .stat-label { font-size:12px; color:var(--text-dim); font-weight:500; }
+    .stat-value { font-family:'Syne',sans-serif; font-size:26px; font-weight:800; color:var(--text); }
+    .stat-sub { font-size:11.5px; color:var(--text-dim); }
+    .stat-icon { width:36px; height:36px; border-radius:10px; display:flex; align-items:center; justify-content:center; margin-bottom:4px; font-size:18px; }
+    .stat-icon.blue { background:rgba(26,90,255,0.15); color:var(--blue-light); }
+    .stat-icon.teal { background:var(--teal-dim); color:var(--teal); }
+    .stat-icon.gold { background:rgba(240,180,41,0.12); color:var(--gold); }
+    .stat-icon.red { background:rgba(255,107,107,0.12); color:#ff8a80; }
+
+    /* ── PROGRESS BAR ── */
+    .progress-bar { height:6px; border-radius:6px; background:var(--surface2); overflow:hidden; }
+    .progress-fill { height:100%; border-radius:6px; transition:width .6s ease; }
+    .fill-teal { background:linear-gradient(90deg,var(--teal),#00b894); }
+    .fill-blue { background:linear-gradient(90deg,var(--blue),var(--blue-light)); }
+    .fill-gold { background:linear-gradient(90deg,var(--gold),#f6d860); }
+    .fill-red { background:linear-gradient(90deg,#ff6b6b,#ff8a80); }
+
+    /* ── TAG/BADGE ── */
+    .tag { display:inline-flex; align-items:center; gap:5px; border-radius:8px; padding:3px 10px; font-size:11.5px; font-weight:600; }
+    .tag-green { background:rgba(0,212,170,0.12); color:var(--teal); }
+    .tag-blue { background:rgba(26,90,255,0.15); color:var(--blue-light); }
+    .tag-gold { background:rgba(240,180,41,0.12); color:var(--gold); }
+    .tag-red { background:rgba(255,107,107,0.12); color:#ff8a80; }
+    .tag-gray { background:rgba(255,255,255,0.07); color:var(--text-dim); }
+
+    /* ── TABLE ── */
+    .table-wrap { overflow-x:auto; }
+    table { width:100%; border-collapse:collapse; font-size:13px; }
+    thead tr { border-bottom:1px solid var(--border); }
+    th { text-align:left; padding:10px 14px; font-size:11px; font-weight:600; text-transform:uppercase; letter-spacing:.08em; color:var(--text-dim); }
+    td { padding:12px 14px; border-bottom:1px solid rgba(255,255,255,0.04); color:var(--text); }
+    tr:last-child td { border-bottom:none; }
+    tbody tr { transition:background .15s; }
+    tbody tr:hover { background:rgba(255,255,255,0.03); }
+
+    /* ── AVATAR ROW ── */
+    .avatar-sm { width:32px; height:32px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--teal)); display:inline-flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:700; font-size:12px; flex-shrink:0; }
+
+    /* ── TIMELINE ── */
+    .timeline { display:flex; flex-direction:column; gap:0; }
+    .timeline-item { display:flex; gap:14px; padding-bottom:18px; position:relative; }
+    .timeline-item::before { content:''; position:absolute; left:10px; top:22px; bottom:0; width:1px; background:var(--border); }
+    .timeline-item:last-child::before { display:none; }
+    .tl-dot { width:22px; height:22px; border-radius:50%; flex-shrink:0; display:flex; align-items:center; justify-content:center; font-size:10px; border:2px solid var(--border); background:var(--surface); }
+    .tl-dot.teal { background:var(--teal); border-color:var(--teal); }
+    .tl-dot.blue { background:var(--blue); border-color:var(--blue); }
+    .tl-dot.gold { background:var(--gold); border-color:var(--gold); color:var(--navy); }
+    .tl-body { flex:1; }
+    .tl-title { font-size:13px; font-weight:600; color:var(--text); }
+    .tl-meta { font-size:11.5px; color:var(--text-dim); margin-top:2px; }
+
+    /* ── INPUT ── */
+    .form-row { display:flex; flex-direction:column; gap:6px; margin-bottom:16px; }
+    label { font-size:12px; font-weight:600; color:var(--text-dim); }
+    input, select, textarea {
+      background:var(--surface); border:1px solid var(--border); border-radius:10px;
+      color:var(--text); font-family:'DM Sans',sans-serif; font-size:13.5px; padding:10px 14px;
+      outline:none; transition:border-color .2s; width:100%;
+    }
+    input:focus, select:focus, textarea:focus { border-color:var(--blue); }
+    textarea { resize:vertical; min-height:90px; }
+
+    /* ── BUTTON ── */
+    .btn { display:inline-flex; align-items:center; gap:8px; border:none; border-radius:10px; padding:10px 20px; font-family:'Syne',sans-serif; font-size:13px; font-weight:700; cursor:pointer; transition:all .2s; }
+    .btn-primary { background:linear-gradient(135deg,var(--blue),var(--blue-light)); color:#fff; }
+    .btn-primary:hover { transform:translateY(-1px); box-shadow:0 4px 20px rgba(26,90,255,0.35); }
+    .btn-ghost { background:var(--surface2); color:var(--text); border:1px solid var(--border); }
+    .btn-ghost:hover { border-color:var(--blue-light); color:var(--blue-light); }
+    .btn-teal { background:linear-gradient(135deg,#00b894,var(--teal)); color:var(--navy); }
+    .btn-sm { padding:6px 14px; font-size:12px; }
+
+    /* ── NOTICE CARD ── */
+    .notice-card { border-left:3px solid var(--teal); padding:14px; background:var(--teal-dim); border-radius:0 12px 12px 0; margin-bottom:12px; transition:all .2s; }
+    .notice-card.urgent { border-left-color:var(--gold); background:rgba(240,180,41,0.07); }
+    .notice-card.exam { border-left-color:var(--blue-light); background:rgba(77,127,255,0.08); }
+    .notice-card h4 { font-size:13.5px; font-weight:600; color:var(--text); }
+    .notice-card p { font-size:12px; color:var(--text-dim); margin-top:4px; }
+    .notice-meta { display:flex; align-items:center; gap:10px; margin-top:8px; }
+
+    /* ── SCROLLBAR ── */
+    ::-webkit-scrollbar { width:5px; }
+    ::-webkit-scrollbar-track { background:transparent; }
+    ::-webkit-scrollbar-thumb { background:var(--surface2); border-radius:10px; }
+    ::-webkit-scrollbar-thumb:hover { background:var(--blue); }
+
+    /* ── PROFILE PAGE ── */
+    .profile-hero { display:flex; align-items:center; gap:24px; padding:24px; background:var(--card-bg); border:1px solid var(--border); border-radius:20px; margin-bottom:20px; }
+    .profile-avatar { width:80px; height:80px; border-radius:50%; background:linear-gradient(135deg,var(--blue),var(--teal)); display:flex; align-items:center; justify-content:center; font-family:'Syne',sans-serif; font-weight:800; font-size:28px; border:3px solid rgba(0,212,170,0.4); flex-shrink:0; }
+    .profile-info h3 { font-family:'Syne',sans-serif; font-size:20px; font-weight:800; }
+    .profile-info p { color:var(--text-dim); font-size:13px; margin-top:4px; }
+    .profile-tags { display:flex; gap:8px; margin-top:10px; flex-wrap:wrap; }
+
+    /* ── ATTENDANCE PAGE ── */
+    .att-subject { padding:14px; border-radius:12px; border:1px solid var(--border); background:var(--card-bg); margin-bottom:10px; }
+    .att-top { display:flex; justify-content:space-between; align-items:center; margin-bottom:10px; }
+    .att-percent { font-family:'Syne',sans-serif; font-size:22px; font-weight:800; }
+    .att-percent.good { color:var(--teal); }
+    .att-percent.warn { color:var(--gold); }
+    .att-percent.bad { color:#ff8a80; }
+    .att-name { font-size:13.5px; font-weight:600; }
+    .att-count { font-size:12px; color:var(--text-dim); }
+
+    /* ── FEES PAGE ── */
+    .fee-summary { display:flex; gap:12px; margin-bottom:20px; }
+    .fee-card { flex:1; padding:18px; border-radius:14px; text-align:center; }
+    .fee-card.paid { background:linear-gradient(135deg,rgba(0,212,170,0.15),rgba(0,212,170,0.05)); border:1px solid rgba(0,212,170,0.3); }
+    .fee-card.pending { background:linear-gradient(135deg,rgba(240,180,41,0.15),rgba(240,180,41,0.05)); border:1px solid rgba(240,180,41,0.3); }
+    .fee-card.total { background:linear-gradient(135deg,rgba(26,90,255,0.15),rgba(26,90,255,0.05)); border:1px solid rgba(26,90,255,0.3); }
+    .fee-amount { font-family:'Syne',sans-serif; font-size:24px; font-weight:800; }
+    .fee-label { font-size:12px; color:var(--text-dim); margin-top:4px; }
+
+    /* ── ASSIGNMENT PAGE ── */
+    .assignment-card { padding:16px; border-radius:14px; border:1px solid var(--border); background:var(--card-bg); margin-bottom:12px; display:flex; gap:14px; align-items:flex-start; }
+    .asgn-icon { width:42px; height:42px; border-radius:12px; display:flex; align-items:center; justify-content:center; font-size:20px; flex-shrink:0; }
+    .asgn-title { font-size:14px; font-weight:600; color:var(--text); }
+    .asgn-meta { font-size:12px; color:var(--text-dim); margin-top:3px; }
+    .asgn-footer { display:flex; gap:10px; margin-top:10px; align-items:center; }
+
+    /* ── CALENDAR MINI ── */
+    .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:4px; text-align:center; }
+    .cal-day-name { font-size:10px; color:var(--text-dim); font-weight:600; padding:4px 0; }
+    .cal-day { font-size:12px; color:var(--text-dim); padding:5px; border-radius:8px; cursor:pointer; transition:all .15s; }
+    .cal-day:hover { background:var(--surface2); color:var(--text); }
+    .cal-day.today { background:var(--blue); color:#fff; font-weight:700; }
+    .cal-day.has-event { color:var(--teal); font-weight:600; }
+    .cal-day.other-month { opacity:.3; }
+
+    /* ── ASSESSMENT ── */
+    .assessment-row { display:flex; justify-content:space-between; align-items:center; padding:12px 0; border-bottom:1px solid rgba(255,255,255,0.04); }
+    .assessment-row:last-child { border-bottom:none; }
+
+    /* ── HAMBURGER ── */
+    .hamburger { display:none; background:none; border:none; color:var(--text); cursor:pointer; padding:8px; }
+    .sidebar-overlay { display:none; position:fixed; inset:0; background:rgba(0,0,0,0.5); z-index:40; }
+
+    @media(max-width:900px) {
+      .grid-3 { grid-template-columns:1fr 1fr; }
+      .grid-4 { grid-template-columns:1fr 1fr; }
+    }
+    @media(max-width:680px) {
+      :root { --sidebar-w:0px; }
+      .sidebar { transform:translateX(-240px); width:240px; }
+      .sidebar.open { transform:translateX(0); }
+      .sidebar-overlay.open { display:block; }
+      main { left:0; padding:16px; }
+      .hamburger { display:flex; }
+      .grid-3,.grid-4 { grid-template-columns:1fr; }
+      .grid-2 { grid-template-columns:1fr; }
+      .fee-summary { flex-direction:column; }
+      .profile-hero { flex-direction:column; text-align:center; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- HEADER -->
+<header>
+  <div class="header-left">
+    <button class="hamburger" onclick="toggleSidebar()" style="display:flex;align-items:center">
+      <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <img src="https://images.shiksha.com/mediadata/images/1587990633php5AsXlj.jpeg" alt="RRCE Logo" style="border-radius:6px;"/>
+    <div class="college-name">
+      Raja Rajeshwari<br>College of Engineering
+      <span>ERP Student Portal</span>
+    </div>
+  </div>
+  <div class="header-right">
+    <div class="notif-btn" onclick="showPage('notices')">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+      <div class="notif-dot"></div>
+    </div>
+    <div class="avatar" onclick="showPage('profile')">IG</div>
+  </div>
+</header>
+
+<!-- SIDEBAR OVERLAY -->
+<div class="sidebar-overlay" id="overlay" onclick="toggleSidebar()"></div>
+
+<!-- SIDEBAR -->
+<nav class="sidebar" id="sidebar">
+  <div class="sidebar-section-label">Main</div>
+
+  <div class="nav-item active" onclick="showPage('dashboard')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="3" width="7" height="7"/><rect x="14" y="3" width="7" height="7"/><rect x="14" y="14" width="7" height="7"/><rect x="3" y="14" width="7" height="7"/></svg>
+    Dashboard
+  </div>
+  <div class="nav-item" onclick="showPage('profile')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M20 21v-2a4 4 0 00-4-4H8a4 4 0 00-4 4v2"/><circle cx="12" cy="7" r="4"/></svg>
+    My Profile
+  </div>
+
+  <div class="sidebar-section-label">Academics</div>
+
+  <div class="nav-item" onclick="showPage('attendance')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 11l3 3L22 4"/><path d="M21 12v7a2 2 0 01-2 2H5a2 2 0 01-2-2V5a2 2 0 012-2h11"/></svg>
+    Attendance
+  </div>
+  <div class="nav-item" onclick="showPage('assignments')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="16" y1="13" x2="8" y2="13"/><line x1="16" y1="17" x2="8" y2="17"/></svg>
+    Assignments
+    <span class="nav-badge">3</span>
+  </div>
+  <div class="nav-item" onclick="showPage('assessment')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><polyline points="22 4 12 14.01 9 11.01"/></svg>
+    Assessment
+  </div>
+  <div class="nav-item" onclick="showPage('syllabus')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 19.5A2.5 2.5 0 016.5 17H20"/><path d="M6.5 2H20v20H6.5A2.5 2.5 0 014 19.5v-15A2.5 2.5 0 016.5 2z"/></svg>
+    Syllabus
+  </div>
+  <div class="nav-item" onclick="showPage('timetable')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="3" y="4" width="18" height="18" rx="2"/><line x1="16" y1="2" x2="16" y2="6"/><line x1="8" y1="2" x2="8" y2="6"/><line x1="3" y1="10" x2="21" y2="10"/></svg>
+    Timetable
+  </div>
+  <div class="nav-item" onclick="showPage('results')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/><line x1="6" y1="20" x2="6" y2="14"/></svg>
+    Results & Marks
+  </div>
+
+  <div class="sidebar-section-label">Finance & Info</div>
+
+  <div class="nav-item" onclick="showPage('fees')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><rect x="1" y="4" width="22" height="16" rx="2"/><line x1="1" y1="10" x2="23" y2="10"/></svg>
+    Fees
+  </div>
+  <div class="nav-item" onclick="showPage('notices')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M18 8A6 6 0 006 8c0 7-3 9-3 9h18s-3-2-3-9"/><path d="M13.73 21a2 2 0 01-3.46 0"/></svg>
+    Notices
+    <span class="nav-badge">5</span>
+  </div>
+  <div class="nav-item" onclick="showPage('library')">
+    <svg class="nav-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M2 3h6a4 4 0 014 4v14a3 3 0 00-3-3H2z"/><path d="M22 3h-6a4 4 0 00-4 4v14a3 3 0 013-3h7z"/></svg>
+    Library
+  </div>
+
+  <div class="sidebar-footer">
+    <div class="logout-btn">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M9 21H5a2 2 0 01-2-2V5a2 2 0 012-2h4"/><polyline points="16 17 21 12 16 7"/><line x1="21" y1="12" x2="9" y2="12"/></svg>
+      Logout
+    </div>
+  </div>
+</nav>
+
+<!-- MAIN CONTENT -->
+<main>
+
+<!-- ══════════════════ DASHBOARD ══════════════════ -->
+<div class="page active" id="page-dashboard">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Dashboard</span></div>
+    <h2>Good Morning, Ishu! 👋</h2>
+    <p>B.E Computer Science & Engineering · 2nd Semester · USN: 1RR25CS005</p>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card">
+      <div class="stat-icon teal">📅</div>
+      <div class="stat-label">Attendance</div>
+      <div class="stat-value">78%</div>
+      <div class="progress-bar"><div class="progress-fill fill-teal" style="width:78%"></div></div>
+      <div class="stat-sub">Min required: 75%</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon blue">📚</div>
+      <div class="stat-label">Assignments Due</div>
+      <div class="stat-value">3</div>
+      <div class="progress-bar"><div class="progress-fill fill-blue" style="width:60%"></div></div>
+      <div class="stat-sub">2 submitted</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon gold">💳</div>
+      <div class="stat-label">Fees Pending</div>
+      <div class="stat-value">₹12k</div>
+      <div class="progress-bar"><div class="progress-fill fill-gold" style="width:40%"></div></div>
+      <div class="stat-sub">Due: 30 Mar 2026</div>
+    </div>
+    <div class="stat-card">
+      <div class="stat-icon red">📢</div>
+      <div class="stat-label">New Notices</div>
+      <div class="stat-value">5</div>
+      <div class="progress-bar"><div class="progress-fill fill-red" style="width:100%"></div></div>
+      <div class="stat-sub">2 urgent</div>
+    </div>
+  </div>
+
+  <div class="grid-3">
+    <div class="card" style="grid-column:span 2">
+      <div class="card-title"><span class="ct-icon">📅</span> Today's Schedule — Sunday, 22 Mar</div>
+      <div class="timeline">
+        <div class="timeline-item">
+          <div class="tl-dot teal">✓</div>
+          <div class="tl-body"><div class="tl-title">Engineering Mathematics IV</div><div class="tl-meta">9:00 – 10:00 AM · Room 302 · Dr. Sharma</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-dot teal">✓</div>
+          <div class="tl-body"><div class="tl-title">Computer Networks</div><div class="tl-meta">10:00 – 11:00 AM · Lab 2 · Prof. Mehta</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-dot blue">●</div>
+          <div class="tl-body"><div class="tl-title">DBMS Lab</div><div class="tl-meta">11:00 AM – 1:00 PM · Lab 4 · Prof. Nair</div></div>
+        </div>
+        <div class="timeline-item">
+          <div class="tl-dot gold">●</div>
+          <div class="tl-body"><div class="tl-title">Operating Systems</div><div class="tl-meta">2:00 – 3:00 PM · Room 205 · Dr. Rao</div></div>
+        </div>
+      </div>
+    </div>
+
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📢</span> Recent Notices</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div class="notice-card urgent">
+          <h4>Mid-Semester Exam Timetable</h4>
+          <p>Exams begin April 1. Check schedule.</p>
+          <div class="notice-meta"><span class="tag tag-gold">Urgent</span><span style="font-size:11px;color:var(--text-dim)">20 Mar</span></div>
+        </div>
+        <div class="notice-card">
+          <h4>Library Hours Extended</h4>
+          <p>Now open till 9 PM on weekdays.</p>
+          <div class="notice-meta"><span class="tag tag-green">Info</span><span style="font-size:11px;color:var(--text-dim)">18 Mar</span></div>
+        </div>
+        <div class="notice-card exam">
+          <h4>Assignment Submission Reminder</h4>
+          <p>CN assignment due 25 Mar.</p>
+          <div class="notice-meta"><span class="tag tag-blue">Academic</span><span style="font-size:11px;color:var(--text-dim)">17 Mar</span></div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div class="grid-2" style="margin-top:16px;">
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📊</span> Subject-wise Attendance</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <div><div class="att-top"><span style="font-size:13px">Engineering Maths IV</span><span class="att-percent good">84%</span></div><div class="progress-bar"><div class="progress-fill fill-teal" style="width:84%"></div></div></div>
+        <div><div class="att-top"><span style="font-size:13px">Computer Networks</span><span class="att-percent good">91%</span></div><div class="progress-bar"><div class="progress-fill fill-teal" style="width:91%"></div></div></div>
+        <div><div class="att-top"><span style="font-size:13px">Operating Systems</span><span class="att-percent warn">72%</span></div><div class="progress-bar"><div class="progress-fill fill-gold" style="width:72%"></div></div></div>
+        <div><div class="att-top"><span style="font-size:13px">DBMS</span><span class="att-percent good">78%</span></div><div class="progress-bar"><div class="progress-fill fill-blue" style="width:78%"></div></div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📝</span> Pending Assignments</div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--surface2);border-radius:10px;">
+          <div><div style="font-size:13px;font-weight:600">CN Assignment 3</div><div style="font-size:11.5px;color:var(--text-dim)">Due: 25 Mar 2026</div></div>
+          <span class="tag tag-red">Overdue</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--surface2);border-radius:10px;">
+          <div><div style="font-size:13px;font-weight:600">DBMS Lab Report</div><div style="font-size:11.5px;color:var(--text-dim)">Due: 28 Mar 2026</div></div>
+          <span class="tag tag-gold">Pending</span>
+        </div>
+        <div style="display:flex;justify-content:space-between;align-items:center;padding:10px;background:var(--surface2);border-radius:10px;">
+          <div><div style="font-size:13px;font-weight:600">OS Case Study</div><div style="font-size:11.5px;color:var(--text-dim)">Due: 01 Apr 2026</div></div>
+          <span class="tag tag-blue">Upcoming</span>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ PROFILE ══════════════════ -->
+<div class="page" id="page-profile">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Profile</span></div>
+    <h2>My Profile</h2>
+    <p>Personal and academic information</p>
+  </div>
+
+  <div class="profile-hero">
+    <div class="profile-avatar">IG</div>
+    <div class="profile-info">
+      <h3>Ishu Gupta</h3>
+      <p>USN: 1RR25CS005 · B.E Computer Science & Engineering</p>
+      <div class="profile-tags">
+        <span class="tag tag-blue">2nd Semester</span>
+        <span class="tag tag-green">2025–2029 Batch</span>
+        <span class="tag tag-gold">Section A</span>
+        <span class="tag tag-gray">Day Scholar</span>
+      </div>
+    </div>
+    <div style="margin-left:auto;display:flex;gap:10px;flex-wrap:wrap">
+      <button class="btn btn-ghost btn-sm">Download ID Card</button>
+      <button class="btn btn-primary btn-sm">Edit Profile</button>
+    </div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">👤</span> Personal Details</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Full Name</span><span>Ishu Gupta</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Date of Birth</span><span>8 july 2008</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Gender</span><span>Male</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Blood Group</span><span>O+</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Mobile</span><span>+91 7633053768</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-dim)">Email</span><span>ishugupta872008@gmail.com</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">🏫</span> Academic Details</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">USN</span><span>1RR22CS042</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Department</span><span>CSE</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Semester</span><span>2nd</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Section</span><span>A</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">CGPA</span><span style="color:var(--teal);font-weight:700">8.5</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-dim)">Admission Year</span><span>2025</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">👨‍👩‍👦</span> Parent / Guardian Details</div>
+      <div style="display:flex;flex-direction:column;gap:10px;font-size:13.5px;">
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Father's Name</span><span>Dharmendra Gupta</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Mother's Name</span><span>Jyoti Devi</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0;border-bottom:1px solid var(--border)"><span style="color:var(--text-dim)">Father's Mobile</span><span>+91 7633053768</span></div>
+        <div style="display:flex;justify-content:space-between;padding:8px 0"><span style="color:var(--text-dim)">Address</span><span style="text-align:right;max-width:180px">42, MG Road, Bengaluru – 560001</span></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">🏅</span> Achievements & Activities</div>
+      <div style="display:flex;flex-direction:column;gap:8px;">
+        <div style="display:flex;gap:10px;align-items:center;padding:8px;background:var(--surface2);border-radius:10px">
+          <span style="font-size:20px">🥇</span>
+          <div><div style="font-size:13px;font-weight:600">Hackathon Winner – TechFest 2025</div><div style="font-size:11.5px;color:var(--text-dim)">Team Leader</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;padding:8px;background:var(--surface2);border-radius:10px">
+          <span style="font-size:20px">🎓</span>
+          <div><div style="font-size:13px;font-weight:600">NPTEL Python Certification</div><div style="font-size:11.5px;color:var(--text-dim)">Elite Score – 80%</div></div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center;padding:8px;background:var(--surface2);border-radius:10px">
+          <span style="font-size:20px">💻</span>
+          <div><div style="font-size:13px;font-weight:600">CSE Coding Club Member</div><div style="font-size:11.5px;color:var(--text-dim)">Since 2022</div></div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ATTENDANCE ══════════════════ -->
+<div class="page" id="page-attendance">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Attendance</span></div>
+    <h2>Attendance</h2>
+    <p>Sem 2 – Jan 2026 to Jun 2026 · Last updated: 22 Mar 2026</p>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-icon teal">📅</div><div class="stat-label">Overall</div><div class="stat-value" style="color:var(--teal)">78%</div><div class="stat-sub">Above minimum</div></div>
+    <div class="stat-card"><div class="stat-icon blue">✅</div><div class="stat-label">Classes Attended</div><div class="stat-value">156</div><div class="stat-sub">out of 200</div></div>
+    <div class="stat-card"><div class="stat-icon red">❌</div><div class="stat-label">Classes Missed</div><div class="stat-value">44</div><div class="stat-sub">10 medical leave</div></div>
+    <div class="stat-card"><div class="stat-icon gold">⚠️</div><div class="stat-label">Shortage Risk</div><div class="stat-value">2</div><div class="stat-sub">Subjects critical</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📊</span> Subject-wise Breakdown</div>
+      <div>
+        <div class="att-subject"><div class="att-top"><div><div class="att-name">Engineering Mathematics IV</div><div class="att-count">42 / 50 classes</div></div><div class="att-percent good">84%</div></div><div class="progress-bar"><div class="progress-fill fill-teal" style="width:84%"></div></div></div>
+        <div class="att-subject"><div class="att-top"><div><div class="att-name">Computer Networks</div><div class="att-count">46 / 50 classes</div></div><div class="att-percent good">91%</div></div><div class="progress-bar"><div class="progress-fill fill-teal" style="width:91%"></div></div></div>
+        <div class="att-subject"><div class="att-top"><div><div class="att-name">Operating Systems</div><div class="att-count">36 / 50 classes</div></div><div class="att-percent warn">72%</div></div><div class="progress-bar"><div class="progress-fill fill-gold" style="width:72%"></div></div><div style="font-size:11px;color:var(--gold);margin-top:5px">⚠ Need 4 more classes to reach 75%</div></div>
+        <div class="att-subject"><div class="att-top"><div><div class="att-name">DBMS</div><div class="att-count">39 / 50 classes</div></div><div class="att-percent good">78%</div></div><div class="progress-bar"><div class="progress-fill fill-blue" style="width:78%"></div></div></div>
+        <div class="att-subject"><div class="att-top"><div><div class="att-name">Software Engineering</div><div class="att-count">33 / 50 classes</div></div><div class="att-percent bad">66%</div></div><div class="progress-bar"><div class="progress-fill fill-red" style="width:66%"></div></div><div style="font-size:11px;color:#ff8a80;margin-top:5px">🚨 Critical: Need 10 consecutive classes</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📅</span> March 2026</div>
+      <div class="cal-grid">
+        <div class="cal-day-name">S</div><div class="cal-day-name">M</div><div class="cal-day-name">T</div><div class="cal-day-name">W</div><div class="cal-day-name">T</div><div class="cal-day-name">F</div><div class="cal-day-name">S</div>
+        <div class="cal-day other-month">23</div><div class="cal-day other-month">24</div><div class="cal-day other-month">25</div><div class="cal-day other-month">26</div><div class="cal-day other-month">27</div><div class="cal-day other-month">28</div><div class="cal-day">1</div>
+        <div class="cal-day">2</div><div class="cal-day has-event">3</div><div class="cal-day has-event">4</div><div class="cal-day has-event">5</div><div class="cal-day has-event">6</div><div class="cal-day has-event">7</div><div class="cal-day">8</div>
+        <div class="cal-day">9</div><div class="cal-day has-event">10</div><div class="cal-day has-event">11</div><div class="cal-day has-event">12</div><div class="cal-day has-event">13</div><div class="cal-day has-event">14</div><div class="cal-day">15</div>
+        <div class="cal-day">16</div><div class="cal-day has-event">17</div><div class="cal-day has-event">18</div><div class="cal-day has-event">19</div><div class="cal-day has-event">20</div><div class="cal-day has-event">21</div><div class="cal-day today">22</div>
+        <div class="cal-day">23</div><div class="cal-day">24</div><div class="cal-day">25</div><div class="cal-day">26</div><div class="cal-day">27</div><div class="cal-day">28</div><div class="cal-day">29</div>
+        <div class="cal-day">30</div><div class="cal-day">31</div>
+      </div>
+      <div style="display:flex;gap:12px;margin-top:12px;font-size:12px">
+        <span style="display:flex;align-items:center;gap:5px;color:var(--teal)">● Present</span>
+        <span style="display:flex;align-items:center;gap:5px;color:var(--text-dim)">● Holiday</span>
+        <span style="display:flex;align-items:center;gap:5px;color:var(--blue-light)">■ Today</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ FEES ══════════════════ -->
+<div class="page" id="page-fees">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Fees</span></div>
+    <h2>Fee Management</h2>
+    <p>Academic Year 2025–26</p>
+  </div>
+
+  <div class="fee-summary">
+    <div class="fee-card total"><div class="fee-amount" style="color:var(--blue-light)">₹1,20,000</div><div class="fee-label">Total Fees</div></div>
+    <div class="fee-card paid"><div class="fee-amount" style="color:var(--teal)">₹1,08,000</div><div class="fee-label">Paid</div></div>
+    <div class="fee-card pending"><div class="fee-amount" style="color:var(--gold)">₹12,000</div><div class="fee-label">Pending</div></div>
+  </div>
+
+  <div class="grid-2">
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">💳</span> Fee Structure</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Particulars</th><th>Amount</th><th>Status</th></tr></thead>
+          <tbody>
+            <tr><td>Tuition Fee (Sem 1–6)</td><td>₹72,000</td><td><span class="tag tag-green">Paid</span></td></tr>
+            <tr><td>Lab Fee</td><td>₹12,000</td><td><span class="tag tag-green">Paid</span></td></tr>
+            <tr><td>Exam Fee (Sem 5)</td><td>₹3,500</td><td><span class="tag tag-green">Paid</span></td></tr>
+            <tr><td>Hostel / Transport</td><td>₹20,500</td><td><span class="tag tag-green">Paid</span></td></tr>
+            <tr><td>Miscellaneous</td><td>₹12,000</td><td><span class="tag tag-gold">Pending</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+      <div style="margin-top:16px">
+        <button class="btn btn-primary">Pay Now ₹12,000</button>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">🧾</span> Payment History</div>
+      <div class="table-wrap">
+        <table>
+          <thead><tr><th>Date</th><th>Amount</th><th>Receipt</th></tr></thead>
+          <tbody>
+            <tr><td>10 Jan 2026</td><td>₹36,000</td><td><span class="tag tag-blue">Download</span></td></tr>
+            <tr><td>12 Jul 2025</td><td>₹36,000</td><td><span class="tag tag-blue">Download</span></td></tr>
+            <tr><td>15 Jan 2025</td><td>₹36,000</td><td><span class="tag tag-blue">Download</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ASSIGNMENTS ══════════════════ -->
+<div class="page" id="page-assignments">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Assignments</span></div>
+    <h2>Assignments</h2>
+    <p>5th Semester – March 2026</p>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="btn btn-primary btn-sm">All (5)</button>
+    <button class="btn btn-ghost btn-sm">Pending (3)</button>
+    <button class="btn btn-ghost btn-sm">Submitted (2)</button>
+  </div>
+
+  <div class="assignment-card">
+    <div class="asgn-icon" style="background:rgba(255,107,107,0.12);color:#ff8a80;">📡</div>
+    <div style="flex:1">
+      <div class="asgn-title">CN Assignment 3 – TCP/IP Protocol Analysis</div>
+      <div class="asgn-meta">Computer Networks · Prof. Mehta</div>
+      <div class="asgn-footer">
+        <span class="tag tag-red">Overdue · 25 Mar</span>
+        <button class="btn btn-primary btn-sm">Submit</button>
+      </div>
+    </div>
+  </div>
+  <div class="assignment-card">
+    <div class="asgn-icon" style="background:rgba(240,180,41,0.12);color:var(--gold);">🗄️</div>
+    <div style="flex:1">
+      <div class="asgn-title">DBMS Lab Report – ER Diagrams & Normalization</div>
+      <div class="asgn-meta">Database Management Systems · Prof. Nair</div>
+      <div class="asgn-footer">
+        <span class="tag tag-gold">Due 28 Mar</span>
+        <button class="btn btn-primary btn-sm">Submit</button>
+      </div>
+    </div>
+  </div>
+  <div class="assignment-card">
+    <div class="asgn-icon" style="background:rgba(77,127,255,0.12);color:var(--blue-light);">💻</div>
+    <div style="flex:1">
+      <div class="asgn-title">OS Case Study – Deadlock Prevention Algorithms</div>
+      <div class="asgn-meta">Operating Systems · Dr. Rao</div>
+      <div class="asgn-footer">
+        <span class="tag tag-blue">Due 01 Apr</span>
+        <button class="btn btn-primary btn-sm">Submit</button>
+      </div>
+    </div>
+  </div>
+  <div class="assignment-card">
+    <div class="asgn-icon" style="background:rgba(0,212,170,0.12);color:var(--teal);">📐</div>
+    <div style="flex:1">
+      <div class="asgn-title">Engineering Maths – Integration Assignment</div>
+      <div class="asgn-meta">Engineering Mathematics IV · Dr. Sharma</div>
+      <div class="asgn-footer">
+        <span class="tag tag-green">Submitted</span>
+        <span style="font-size:12px;color:var(--text-dim);margin-left:8px">Grade: 18/20</span>
+      </div>
+    </div>
+  </div>
+  <div class="assignment-card">
+    <div class="asgn-icon" style="background:rgba(0,212,170,0.12);color:var(--teal);">🔧</div>
+    <div style="flex:1">
+      <div class="asgn-title">SE Mini Project – UML Diagrams</div>
+      <div class="asgn-meta">Software Engineering · Prof. Kumar</div>
+      <div class="asgn-footer">
+        <span class="tag tag-green">Submitted</span>
+        <span style="font-size:12px;color:var(--text-dim);margin-left:8px">Grade: 16/20</span>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ ASSESSMENT ══════════════════ -->
+<div class="page" id="page-assessment">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Assessment</span></div>
+    <h2>Assessment & Marks</h2>
+    <p>Internal Assessment – Semester 5</p>
+  </div>
+
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-icon teal">📋</div><div class="stat-label">CIE 1 Average</div><div class="stat-value">18.2</div><div class="stat-sub">out of 20</div></div>
+    <div class="stat-card"><div class="stat-icon blue">📋</div><div class="stat-label">CIE 2 Average</div><div class="stat-value">16.8</div><div class="stat-sub">out of 20</div></div>
+    <div class="stat-card"><div class="stat-icon gold">📊</div><div class="stat-label">Assignment Avg</div><div class="stat-value">17.4</div><div class="stat-sub">out of 20</div></div>
+    <div class="stat-card"><div class="stat-icon red">🧮</div><div class="stat-label">IA Total</div><div class="stat-value">83%</div><div class="stat-sub">52.4/60</div></div>
+  </div>
+
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">📊</span> Detailed Marks</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Subject</th><th>CIE 1 (/20)</th><th>CIE 2 (/20)</th><th>Assignment (/20)</th><th>Total (/60)</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Engineering Maths IV</td><td>19</td><td>18</td><td>18</td><td><b>55</b></td><td><span class="tag tag-green">Excellent</span></td></tr>
+          <tr><td>Computer Networks</td><td>17</td><td>16</td><td>18</td><td><b>51</b></td><td><span class="tag tag-green">Good</span></td></tr>
+          <tr><td>Operating Systems</td><td>15</td><td>14</td><td>16</td><td><b>45</b></td><td><span class="tag tag-gold">Average</span></td></tr>
+          <tr><td>DBMS</td><td>18</td><td>17</td><td>18</td><td><b>53</b></td><td><span class="tag tag-green">Good</span></td></tr>
+          <tr><td>Software Engineering</td><td>20</td><td>19</td><td>17</td><td><b>56</b></td><td><span class="tag tag-green">Excellent</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ SYLLABUS ══════════════════ -->
+<div class="page" id="page-syllabus">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Syllabus</span></div>
+    <h2>Syllabus</h2>
+    <p>Semester 5 · B.E CSE · VTU 2022 Scheme</p>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:14px;">
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📐</span> Engineering Mathematics IV (21MAT41)</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px">
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 1</div><div style="font-size:12px;font-weight:600">Complex Analysis</div><div class="tag tag-green" style="margin-top:6px;display:inline-flex;font-size:10px">Completed</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 2</div><div style="font-size:12px;font-weight:600">Probability</div><div class="tag tag-green" style="margin-top:6px;display:inline-flex;font-size:10px">Completed</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 3</div><div style="font-size:12px;font-weight:600">Sampling</div><div class="tag tag-blue" style="margin-top:6px;display:inline-flex;font-size:10px">In Progress</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 4</div><div style="font-size:12px;font-weight:600">Stochastic</div><div class="tag tag-gray" style="margin-top:6px;display:inline-flex;font-size:10px">Pending</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 5</div><div style="font-size:12px;font-weight:600">Z-Transforms</div><div class="tag tag-gray" style="margin-top:6px;display:inline-flex;font-size:10px">Pending</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-title"><span class="ct-icon">📡</span> Computer Networks (21CS51)</div>
+      <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:8px;margin-top:4px">
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 1</div><div style="font-size:12px;font-weight:600">OSI Model</div><div class="tag tag-green" style="margin-top:6px;display:inline-flex;font-size:10px">Completed</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 2</div><div style="font-size:12px;font-weight:600">Data Link</div><div class="tag tag-green" style="margin-top:6px;display:inline-flex;font-size:10px">Completed</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 3</div><div style="font-size:12px;font-weight:600">Network Layer</div><div class="tag tag-green" style="margin-top:6px;display:inline-flex;font-size:10px">Completed</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 4</div><div style="font-size:12px;font-weight:600">TCP/UDP</div><div class="tag tag-blue" style="margin-top:6px;display:inline-flex;font-size:10px">In Progress</div></div>
+        <div style="padding:10px;background:var(--surface2);border-radius:10px;text-align:center"><div style="font-size:11px;color:var(--text-dim);margin-bottom:4px">Module 5</div><div style="font-size:12px;font-weight:600">Security</div><div class="tag tag-gray" style="margin-top:6px;display:inline-flex;font-size:10px">Pending</div></div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ TIMETABLE ══════════════════ -->
+<div class="page" id="page-timetable">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Timetable</span></div>
+    <h2>Class Timetable</h2>
+    <p>Semester 5 · Odd Semester 2025–26</p>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">🗓️</span> Weekly Schedule</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Time</th><th>Monday</th><th>Tuesday</th><th>Wednesday</th><th>Thursday</th><th>Friday</th></tr></thead>
+        <tbody>
+          <tr><td style="color:var(--text-dim);font-size:12px">9–10 AM</td><td>EM IV</td><td>CN</td><td>OS</td><td>DBMS</td><td>SE</td></tr>
+          <tr><td style="color:var(--text-dim);font-size:12px">10–11 AM</td><td>CN</td><td>DBMS</td><td>SE</td><td>EM IV</td><td>CN</td></tr>
+          <tr><td style="color:var(--text-dim);font-size:12px">11 AM–1 PM</td><td><span class="tag tag-blue">CN Lab</span></td><td><span class="tag tag-teal">DBMS Lab</span></td><td>—</td><td><span class="tag tag-gold">OS Lab</span></td><td>—</td></tr>
+          <tr><td style="color:var(--text-dim);font-size:12px">2–3 PM</td><td>OS</td><td>SE</td><td>EM IV</td><td>CN</td><td>DBMS</td></tr>
+          <tr><td style="color:var(--text-dim);font-size:12px">3–4 PM</td><td>DBMS</td><td>OS</td><td>CN</td><td>SE</td><td>EM IV</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ RESULTS ══════════════════ -->
+<div class="page" id="page-results">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Results</span></div>
+    <h2>Results & Marks</h2>
+    <p>VTU Examination Results</p>
+  </div>
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-icon teal">🎓</div><div class="stat-label">CGPA</div><div class="stat-value" style="color:var(--teal)">8.4</div><div class="stat-sub">All semesters</div></div>
+    <div class="stat-card"><div class="stat-icon blue">📜</div><div class="stat-label">Semesters</div><div class="stat-value">4</div><div class="stat-sub">Completed</div></div>
+    <div class="stat-card"><div class="stat-icon gold">🏆</div><div class="stat-label">Best SGPA</div><div class="stat-value">8.9</div><div class="stat-sub">Sem 2</div></div>
+    <div class="stat-card"><div class="stat-icon red">📊</div><div class="stat-label">Backlogs</div><div class="stat-value">0</div><div class="stat-sub">Clear</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">📈</span> Semester Results</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Semester</th><th>SGPA</th><th>Credits</th><th>Result</th><th>Certificate</th></tr></thead>
+        <tbody>
+          <tr><td>Semester 1</td><td>8.2</td><td>22</td><td><span class="tag tag-green">PASS</span></td><td><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+          <tr><td>Semester 2</td><td>8.9</td><td>22</td><td><span class="tag tag-green">PASS</span></td><td><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+          <tr><td>Semester 3</td><td>8.1</td><td>23</td><td><span class="tag tag-green">PASS</span></td><td><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+          <tr><td>Semester 4</td><td>8.4</td><td>23</td><td><span class="tag tag-green">PASS</span></td><td><button class="btn btn-ghost btn-sm">Download</button></td></tr>
+          <tr><td>Semester 5</td><td>—</td><td>—</td><td><span class="tag tag-gray">Ongoing</span></td><td>—</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ NOTICES ══════════════════ -->
+<div class="page" id="page-notices">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Notices</span></div>
+    <h2>Notices & Circulars</h2>
+    <p>Official announcements from RRCE administration</p>
+  </div>
+
+  <div style="display:flex;gap:10px;margin-bottom:20px;flex-wrap:wrap;">
+    <button class="btn btn-primary btn-sm">All (8)</button>
+    <button class="btn btn-ghost btn-sm">Urgent (2)</button>
+    <button class="btn btn-ghost btn-sm">Academic (4)</button>
+    <button class="btn btn-ghost btn-sm">Events (2)</button>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:12px;">
+    <div class="notice-card urgent">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><h4>⚠️ Mid-Semester Examination Timetable Released</h4><span class="tag tag-gold">Urgent</span></div>
+      <p>Mid-semester examinations for all 5th semester students begin from April 1, 2026. Students are advised to check the detailed timetable on the VTU portal and prepare accordingly. Hall tickets to be collected from office.</p>
+      <div class="notice-meta"><span style="font-size:11px;color:var(--text-dim)">📅 20 March 2026 · Examination Cell</span><button class="btn btn-ghost btn-sm">View</button></div>
+    </div>
+    <div class="notice-card urgent">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><h4>📋 Fee Payment Deadline – 30 March 2026</h4><span class="tag tag-gold">Urgent</span></div>
+      <p>All students with pending fees are requested to clear dues before 30th March 2026. Failure may result in detention from exams. Contact accounts department for any issues.</p>
+      <div class="notice-meta"><span style="font-size:11px;color:var(--text-dim)">📅 18 March 2026 · Accounts Dept</span><button class="btn btn-ghost btn-sm">View</button></div>
+    </div>
+    <div class="notice-card exam">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><h4>📚 CN Assignment 3 Submission Reminder</h4><span class="tag tag-blue">Academic</span></div>
+      <p>Students of 5-A and 5-B are reminded to submit CN Assignment 3 on TCP/IP Protocol Analysis by 25th March 2026. Late submissions will not be accepted.</p>
+      <div class="notice-meta"><span style="font-size:11px;color:var(--text-dim)">📅 17 March 2026 · Prof. Mehta</span></div>
+    </div>
+    <div class="notice-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><h4>📖 Library Extended Hours</h4><span class="tag tag-green">Info</span></div>
+      <p>The RRCE library will now be open until 9:00 PM on all weekdays from March 17 to April 15, 2026, to assist students in exam preparation. Weekend hours remain the same.</p>
+      <div class="notice-meta"><span style="font-size:11px;color:var(--text-dim)">📅 16 March 2026 · Library</span></div>
+    </div>
+    <div class="notice-card">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start"><h4>🎉 TechFest 2026 – Registrations Open</h4><span class="tag tag-green">Events</span></div>
+      <p>Annual TechFest 2026 registrations are now open. Events include Hackathon, Coding Contest, Robotics, and Cultural programs. Last date to register: March 28, 2026.</p>
+      <div class="notice-meta"><span style="font-size:11px;color:var(--text-dim)">📅 15 March 2026 · Student Council</span><button class="btn btn-teal btn-sm">Register</button></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════════ LIBRARY ══════════════════ -->
+<div class="page" id="page-library">
+  <div class="page-header">
+    <div class="breadcrumb">Home <span>› Library</span></div>
+    <h2>Library</h2>
+    <p>RRCE Central Library</p>
+  </div>
+  <div class="grid-4" style="margin-bottom:20px;">
+    <div class="stat-card"><div class="stat-icon blue">📚</div><div class="stat-label">Books Issued</div><div class="stat-value">3</div><div class="stat-sub">2 due this week</div></div>
+    <div class="stat-card"><div class="stat-icon gold">⏰</div><div class="stat-label">Overdue</div><div class="stat-value">1</div><div class="stat-sub">Fine: ₹10</div></div>
+    <div class="stat-card"><div class="stat-icon teal">🔖</div><div class="stat-label">Wishlist</div><div class="stat-value">4</div><div class="stat-sub">Books saved</div></div>
+    <div class="stat-card"><div class="stat-icon red">📖</div><div class="stat-label">E-Resources</div><div class="stat-value">12k+</div><div class="stat-sub">Journals available</div></div>
+  </div>
+  <div class="card">
+    <div class="card-title"><span class="ct-icon">📗</span> Currently Issued Books</div>
+    <div class="table-wrap">
+      <table>
+        <thead><tr><th>Book Title</th><th>Author</th><th>Issue Date</th><th>Due Date</th><th>Status</th></tr></thead>
+        <tbody>
+          <tr><td>Computer Networks (5th Ed.)</td><td>Tanenbaum</td><td>01 Mar</td><td>22 Mar</td><td><span class="tag tag-red">Due Today</span></td></tr>
+          <tr><td>Operating System Concepts</td><td>Silberschatz</td><td>10 Mar</td><td>31 Mar</td><td><span class="tag tag-green">On Time</span></td></tr>
+          <tr><td>Database System Concepts</td><td>Korth</td><td>15 Mar</td><td>05 Apr</td><td><span class="tag tag-green">On Time</span></td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</div>
+
+</main>
+
+<script>
+  function showPage(id) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    const p = document.getElementById('page-' + id);
+    if (p) p.classList.add('active');
+    const navMap = {
+      dashboard: 0, profile: 1, attendance: 2, assignments: 3,
+      assessment: 4, syllabus: 5, timetable: 6, results: 7,
+      fees: 8, notices: 9, library: 10
+    };
+    const items = document.querySelectorAll('.nav-item');
+    if (navMap[id] !== undefined && items[navMap[id]]) items[navMap[id]].classList.add('active');
+    if (window.innerWidth <= 680) toggleSidebar(false);
+  }
+
+  function toggleSidebar(forceClose) {
+    const s = document.getElementById('sidebar');
+    const o = document.getElementById('overlay');
+    const isOpen = s.classList.contains('open');
+    if (forceClose === false || isOpen) {
+      s.classList.remove('open'); o.classList.remove('open');
+    } else {
+      s.classList.add('open'); o.classList.add('open');
+    }
+  }
+</script>
+</body>
+</html>
