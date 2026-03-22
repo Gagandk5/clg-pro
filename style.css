@@ -8,7 +8,6 @@
     width: 100%;
 }
 .body{
-    margin: 70px;
     display: flex;
     flex-wrap: wrap;
     justify-content: space-evenly;
